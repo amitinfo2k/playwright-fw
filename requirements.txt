@@ -1,0 +1,30 @@
+# Pinned to versions confirmed installed in .venv
+# Run: pip install -r requirements.txt
+# Then: playwright install chromium
+
+# Core LangChain ecosystem
+langchain>=1.3.10
+langchain-core>=1.4.8
+langchain-google-genai>=4.2.5
+
+# LangGraph agent orchestration
+langgraph>=1.2.6
+langgraph-checkpoint>=4.1.1
+langgraph-prebuilt>=1.1.0
+
+# Browser automation
+playwright>=1.60.0
+
+# Data handling
+pandas>=3.0.0
+
+# HTML/DOM parsing
+beautifulsoup4>=4.15.0
+lxml>=6.1.1
+
+# Environment config
+python-dotenv>=1.0.0
+
+# Test runner
+pytest>=8.0.0
+pytest-playwright>=0.5.0

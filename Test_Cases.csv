@@ -1,0 +1,6 @@
+id,test_title,steps,expected_result
+1,Login with valid credentials,"1. Navigate to /login, 2. Enter 'demo_user@mendix.com' in Email, 3. Enter 'Welc0me!' in Password, 4. Click 'Sign In'",Dashboard is visible
+2,Create new expense report,"1. Navigate to /, 2. Click 'New Expense', 3. Enter 'Team Lunch' in Description, 4. Enter '120.50' in Amount, 5. Select 'Food & Drinks' in Category, 6. Click 'Save'",Expense 'Team Lunch' appears in the list
+3,Search for expense,"1. Navigate to /, 2. Enter 'Team Lunch' in Search, 3. Click 'Search'",Search results contain 'Team Lunch'
+4,Approve expense,"1. Navigate to /expenses, 2. Click on expense row containing 'Team Lunch', 3. Click 'Approve'",Expense status shows 'Approved'
+5,Logout,"1. Navigate to /, 2. Click the user avatar or profile menu, 3. Click 'Sign Out'",Login page is visible

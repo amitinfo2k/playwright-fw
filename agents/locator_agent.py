@@ -27,8 +27,9 @@ import os
 import json
 import logging
 from pathlib import Path
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langfuse.decorators import observe
 from langchain_core.messages import SystemMessage, HumanMessage
+from utils.llm_factory import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -40,18 +41,7 @@ ASYNC_TRIGGER_KEYWORDS = {
     "filter", "login", "logout", "approve", "reject",
 }
 
-_LLM: ChatGoogleGenerativeAI | None = None
-
-
-def _get_llm() -> ChatGoogleGenerativeAI:
-    global _LLM
-    if _LLM is None:
-        _LLM = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            google_api_key=os.getenv("GOOGLE_API_KEY", ""),
-            temperature=0,
-        )
-    return _LLM
+# LLM is now managed by factory
 
 
 def _load_locator_map() -> dict:
@@ -106,10 +96,10 @@ def _select_locator_with_llm(
     locator_rules: str,
 ) -> dict | None:
     """
-    Use Gemini to select the best locator from candidates when
+    Use LLM to select the best locator from candidates when
     heuristic matching is inconclusive.
     """
-    llm = _get_llm()
+    llm = get_llm()
 
     candidates_text = json.dumps(candidates, indent=2)
     prompt = f"""You are a Mendix Playwright locator expert.
@@ -229,6 +219,7 @@ def resolve_locator(
     return result
 
 
+@observe(name="Locator Agent")
 def run_locator_agent(state: dict) -> dict:
     """
     LangGraph node: Locator Strategy Agent.

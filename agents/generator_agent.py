@@ -19,24 +19,14 @@ import os
 import re
 import json
 import logging
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langfuse.decorators import observe
 from langchain_core.messages import SystemMessage, HumanMessage
 from utils.code_writer import write_test_file
+from utils.llm_factory import get_llm
 
 logger = logging.getLogger(__name__)
 
-_LLM: ChatGoogleGenerativeAI | None = None
-
-
-def _get_llm() -> ChatGoogleGenerativeAI:
-    global _LLM
-    if _LLM is None:
-        _LLM = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            google_api_key=os.getenv("GOOGLE_API_KEY", ""),
-            temperature=0,
-        )
-    return _LLM
+# LLM is now managed by factory
 
 
 # ---------------------------------------------------------------------------
@@ -245,10 +235,9 @@ def generate_test_code(
 
 def _llm_refine_code(raw_code: str, test_title: str, expected_result: str) -> str:
     """
-    Optional LLM pass: let Gemini clean up the generated code,
-    fix any obvious issues.
+    Optional LLM pass: let LLM clean up the generated code.
     """
-    llm = _get_llm()
+    llm = get_llm()
     prompt = f"""You are a Playwright TypeScript expert. Review and clean the following test script.
 Rules:
 - Keep all existing locator expressions exactly as-is.
@@ -278,6 +267,7 @@ Rules:
         return raw_code
 
 
+@observe(name="Generator Agent")
 def run_generator_agent(state: dict) -> dict:
     """
     LangGraph node: Test Generator Agent.

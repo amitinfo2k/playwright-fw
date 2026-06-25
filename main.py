@@ -98,6 +98,7 @@ def main() -> None:
         "ui_map":         {},
         "generated_files": [],
         "failed_tests":   [],
+        "hitl_enabled":   os.getenv("HITL_ENABLED", "false").lower() == "true",
     }
 
     if args.no_run:

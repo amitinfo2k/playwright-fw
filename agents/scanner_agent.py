@@ -38,6 +38,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright, Page, Browser
+from langfuse.decorators import observe
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +151,7 @@ def _extract_elements(page: Page, soup: BeautifulSoup) -> list[dict]:
     return elements
 
 
+@observe(name="Scanner Agent")
 def run_scanner_agent(state: dict) -> dict:
     """
     LangGraph node: App Scanner Agent.

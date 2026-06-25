@@ -26,7 +26,9 @@ State machine:
 
 import logging
 import subprocess
+import os
 from typing import Literal
+from langfuse.decorators import observe
 
 from langgraph.graph import StateGraph, END
 from typing_extensions import TypedDict
@@ -66,6 +68,7 @@ class AutomationState(TypedDict, total=False):
     retry_count:     int
     failure_reason:  str
     failed_tests:    list[dict]
+    hitl_enabled:    bool
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -113,6 +116,7 @@ def locate_node(state: AutomationState) -> AutomationState:
     return run_locator_agent(state)
 
 
+@observe(name="Generate Test Node")
 def generate_node(state: AutomationState) -> AutomationState:
     """Run the Test Generator Agent."""
     result = run_generator_agent(state)
@@ -124,6 +128,28 @@ def generate_node(state: AutomationState) -> AutomationState:
     return {**result, "generated_files": files}
 
 
+@observe(name="Review Node (HITL)")
+def review_node(state: AutomationState) -> AutomationState:
+    """
+    HITL: Wait for user to review generated code.
+    Enabled via env HITL_ENABLED=true or state.
+    """
+    is_hitl = os.getenv("HITL_ENABLED", "false").lower() == "true" or state.get("hitl_enabled", False)
+    if not is_hitl:
+        return state
+
+    file_path = state.get("generated_file", "")
+    print(f"\n[HITL] Test generated: {file_path}")
+    print(f"[HITL] Please review the file and press ENTER to continue, or type 'abort' to stop.")
+    user_input = input(">> ").lower().strip()
+
+    if user_input == "abort":
+        raise InterruptedError("User aborted the execution during HITL review.")
+
+    return state
+
+
+@observe(name="Run Test Node")
 def run_test_node(state: AutomationState) -> AutomationState:
     """
     Execute the generated Playwright test file via @playwright/test.
@@ -156,6 +182,7 @@ def run_test_node(state: AutomationState) -> AutomationState:
         return {**state, "failure_reason": "Environment error: npx not found."}
 
 
+@observe(name="Heal Node")
 def heal_node(state: AutomationState) -> AutomationState:
     """
     Self-Heal: clear locator cache entries for the failed step
@@ -245,6 +272,7 @@ def build_graph() -> StateGraph:
     g.add_node("prepare",  prepare_test_node)
     g.add_node("locate",   locate_node)
     g.add_node("generate", generate_node)
+    g.add_node("review",   review_node)
     g.add_node("run_test", run_test_node)
     g.add_node("heal",     heal_node)
     g.add_node("advance",  advance_node)
@@ -260,7 +288,8 @@ def build_graph() -> StateGraph:
         "done":   END,
     })
     g.add_edge("locate",   "generate")
-    g.add_edge("generate", "run_test")
+    g.add_edge("generate", "review")
+    g.add_edge("review",   "run_test")
     g.add_conditional_edges("run_test", route_after_run, {
         "heal":    "heal",
         "advance": "advance",

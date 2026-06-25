@@ -1,7 +1,10 @@
 ## Goal
 
 - **Mendix UI** Application Automation Testing framework using Playwright.
-- Agentic AI framework which takes `Test_Cases.csv` (with detailed steps) as input and generates working Playwright test scripts.
+- Agentic AI framework which takes `Test_Cases.csv` (with detailed steps) as input and generates working Playwright test scripts in **TypeScript** (.spec.ts).
+- **Agnostic LLM Support**: Uses generic `LLM_*` variables compatible with OpenAI, Azure, and local models.
+- **Observability**: Full tracing via **Langfuse** integration.
+- **HITL**: Optional Human-In-The-Loop review step before execution.
 - Autonomously fix locator issues and output working Playwright test scripts.
 - Follow locator rules strictly as defined in `playwright_mendix_locators.md`. Mendix UI is dynamic in nature.
 
@@ -21,13 +24,15 @@ All agents must follow the rules in [`playwright_mendix_locators.md`](./playwrig
 
 - **Input:** `Test_Cases.csv` columns: `id`, `test_title`, `steps`, `expected_result`
 - **Output:** Working Playwright TypeScript test files in `generated_tests/` (.spec.ts)
+- **Tracing:** Traces and feedback sent to **Langfuse** if configured.
 
 ## Agent Responsibilities
 
-1. **App Scanner Agent** — Crawls pages, maps DOM with priority-ranked locator candidates.
+1. **App Scanner Agent** — Crawls pages, maps DOM with priority-ranked locator candidates (TypeScript syntax).
 2. **Locator Strategy Agent** — Selects the best locator per the rules above; stores in `locator_map.json`.
-3. **Test Generator Agent** — Reads CSV rows, queries Locator Strategy Agent, writes Playwright type-script tests.
+3. **Test Generator Agent** — Reads CSV rows, queries Locator Strategy Agent, writes Playwright TypeScript tests.
+4. **HITL Review Node** — (Optional) Pauses for user review in `generated_tests/` before run.
 
 ## Self-Healing
 
-If a test fails with any error (e.g., `TimeoutError`, `AssertionError`, etc.), the framework re-invokes the Locator Strategy Agent to re-scan and update the failing locator in `locator_map.json`, then re-runs the test.
+If a test fails with any error (e.g., `TimeoutError`, `AssertionError`, etc.), the framework clears the specific locator cache in `locator_map.json` (force-healing), re-invokes the Locator Strategy Agent to re-scan, then re-runs the test.
